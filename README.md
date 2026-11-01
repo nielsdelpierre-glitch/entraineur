@@ -1,22 +1,25 @@
-# L’ENTRAÎNEUR — version 2
+# L’ENTRAÎNEUR — application web installable
 
-## Installation GitHub Pages
-1. Ouvre le dépôt `entraineur`.
-2. Add file → Upload files.
-3. Décompresse cette archive sur ton ordinateur puis dépose le contenu (index.html, app.js, styles.css, manifest, sw.js et dossier icons) à la racine du dépôt.
-4. Commit changes.
-5. Settings → Pages → Deploy from a branch → `main` → `/(root)` → Save.
-6. Ouvre l’URL GitHub Pages dans Safari sur iPhone, puis Partager → Ajouter à l’écran d’accueil.
+## Contenu
+- Application mobile-first en français, thème sombre et accent vert citron.
+- Tableau de bord et structure hebdomadaire.
+- Journal de séances (activité, durée, RPE, distance, notes).
+- Cycle de 12 semaines modifiable.
+- Historique, export et import JSON.
+- Mise en cache hors ligne après le premier chargement.
 
-## Comprendre les fichiers
-- `index.html` : structure des écrans et formulaire.
-- `styles.css` : apparence et mise en page.
-- `app.js` : logique de l'application. `plan` décrit les jours, `templates` les exercices, `grades` les cotations, `routeRows()` crée une ligne par voie, `build()` construit les exercices et `onsubmit` enregistre la séance.
-- `manifest.webmanifest` : nom et options d'installation.
-- `sw.js` : cache pour usage hors ligne.
-- `icons/` : icônes.
+## Tester sur ordinateur
+Ouvrir un serveur web local dans ce dossier (un simple double-clic sur `index.html` suffit pour tester l'interface, mais le mode installable et le service worker nécessitent HTTPS ou localhost).
 
-## Fonctions
-Séances détaillées, réglage des séries/répétitions, progression douce selon la semaine, escalade avec nombre de voies et cotation par voie (ou « Blocs »), historique et export JSON.
+## Publier gratuitement avec GitHub Pages
+1. Créer un dépôt GitHub nommé `entraineur`.
+2. Ajouter tous les fichiers et dossiers de cette archive à la racine du dépôt.
+3. Dans **Settings → Pages**, choisir **Deploy from a branch**, branche `main`, dossier `/ (root)`.
+4. Ouvrir l'adresse HTTPS fournie par GitHub Pages.
+5. Sur iPhone, ouvrir cette adresse dans **Safari** → **Partager** → **Sur l’écran d’accueil** → **Ajouter**.
 
-Les données restent sur cet appareil dans le stockage du navigateur. Exporte régulièrement une sauvegarde. Cette version est une PWA, pas une application native App Store.
+## Données et limites
+Les séances sont stockées localement dans le navigateur/appareil. Elles ne sont pas synchronisées entre appareils et peuvent être perdues si les données du site sont effacées. Utiliser régulièrement **Exporter JSON** et conserver le fichier dans Fichiers/iCloud Drive. Pour une vraie synchronisation multi-appareils, il faudra ajouter une authentification et une base de données distante.
+
+## À savoir sur le programme
+Le programme proposé est un cadre de préparation générale, pas un suivi médical ni un coaching technique de boxe. Les trajets à vélo comptent dans la charge hebdomadaire : réduire une séance de course ou de jambes si nécessaire.
