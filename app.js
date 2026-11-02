@@ -12,11 +12,24 @@ const grades=["5a","5a+","5b","5b+","5c","5c+","6a","6a+","6b","6b+","6c","6c+",
 let page="home", selected=null;
 const STORAGE_KEY="entraineur-v4";
 const load=()=>{try{const raw=localStorage.getItem(STORAGE_KEY);if(!raw)return {logs:[],adjustments:{},week:1};const x=JSON.parse(raw);return {...x,logs:Array.isArray(x.logs)?x.logs:[],adjustments:x.adjustments||{},week:x.week||1}}catch(e){console.error(e);return {logs:[],adjustments:{},week:1}}};
-let data=load(); function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(data))}
+let data=load();
+let activeProfile="Niels";
+let profiles={};
+try{
+ const saved=JSON.parse(localStorage.getItem(STORAGE_KEY)||"null");
+ if(saved && saved.profiles && typeof saved.profiles==="object"){
+   profiles=saved.profiles; activeProfile=saved.activeProfile||Object.keys(profiles)[0]||"Niels";
+   data=profiles[activeProfile]||data;
+ } else { profiles.Niels=data; }
+}catch(e){profiles.Niels=data}
+function save(){
+ profiles[activeProfile]=data;
+ localStorage.setItem(STORAGE_KEY,JSON.stringify({profiles,activeProfile,logs:data.logs||[],adjustments:data.adjustments||{},week:data.week||1}));
+}
 function esc(s){return String(s).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 function weekFactor(){return Math.max(0,Math.min(3,(Number(data.week)||1)-1))}
 function exerciseRows(items,key){return items.map((it,i)=>{let id=key+"-"+i,adj=data.adjustments[id]||{sets:it[1],reps:it[2]};return `<div class="exercise"><div class="name">${esc(it[0])}</div><div><label>Séries</label><button data-adjust="${id}" data-field="sets" data-delta="-1">−</button> <input aria-label="Séries ${esc(it[0])}" data-val="${id}" data-field="sets" type="number" min="1" max="20" value="${adj.sets}"> <button data-adjust="${id}" data-field="sets" data-delta="1">+</button></div><div><label>Rép.</label><button data-adjust="${id}" data-field="reps" data-delta="-1">−</button> <input aria-label="Répétitions ${esc(it[0])}" data-val="${id}" data-field="reps" type="number" min="1" max="200" value="${adj.reps}"> <button data-adjust="${id}" data-field="reps" data-delta="1">+</button></div></div>`}).join("")}
-function renderHome(){let mins=data.logs.reduce((s,l)=>s+(+l.duration||0),0);return `<h1>Ton entraînement</h1><p class="muted">Semaine ${data.week||1} · construis ta régularité</p><div class="row"><div class="card"><div class="subtle">SÉANCES ENREGISTRÉES</div><div class="stat">${data.logs.length}</div></div><div class="card"><div class="subtle">DURÉE TOTALE</div><div class="stat">${mins}<small> min</small></div></div></div><h2>Cette semaine</h2>${activities.map((a,i)=>`<button class="session" data-session="${i}"><span><b>${a.day} · ${a.name}</b><small>${a.desc}</small></span><span class="tag">OUVRIR →</span></button>`).join("")}<button class="primary" data-page="log">＋ Enregistrer une séance libre</button>`}
+function renderHome(){let mins=data.logs.reduce((s,l)=>s+(+l.duration||0),0);return `<h1>Ton entraînement</h1><p class="muted">Profil : ${esc(activeProfile)} · Semaine ${data.week||1} · construis ta régularité</p><div class="row"><div class="card"><div class="subtle">SÉANCES ENREGISTRÉES</div><div class="stat">${data.logs.length}</div></div><div class="card"><div class="subtle">DURÉE TOTALE</div><div class="stat">${mins}<small> min</small></div></div></div><h2>Cette semaine</h2>${activities.map((a,i)=>`<button class="session" data-session="${i}"><span><b>${a.day} · ${a.name}</b><small>${a.desc}</small></span><span class="tag">OUVRIR →</span></button>`).join("")}<button class="primary" data-page="log">＋ Enregistrer une séance libre</button>`}
 function detail(i){selected=i;let a=activities[i];let week=Number(data.week)||1;let items=a.items.map(x=>[x[0],x[1]+(week>=2&&["Squats","Pompes","Tractions","Dips"].includes(x[0])?Math.min(2,Math.floor((week-1)/2)):0),x[2]+(week>=2&&["Squats","Pompes","Tractions","Dips"].includes(x[0])?Math.min(3,Math.floor((week-1)/2)):0)]);
 let body=`<button data-back>← Retour</button><h1>${a.day} · ${a.name}</h1><p class="muted">${a.desc}</p>`;
 if(a.name==="Course") body+=`<div class="card"><label>Type de course</label><select id="runType"><option>Endurance facile</option><option>Intervalles</option><option>Tempo / seuil</option><option>Fractionné en côte</option><option>Sortie longue</option></select><div class="row"><div><label>Distance (km)</label><input id="distance" type="number" min="0" step="0.1" placeholder="Ex. 6.5"></div><div><label>Durée (minutes)</label><input id="duration" type="number" min="1" placeholder="Ex. 40"></div></div><h2>Séries de course</h2><p class="subtle">Ajoute les répétitions de fractionné ou les blocs d’allure. Pour une sortie facile, laisse vide.</p><label>Nombre de séries / intervalles</label><input id="runCount" type="number" min="0" max="30" value="0"><div id="runSeries"></div><label>Notes</label><input id="notes" placeholder="Allure, sensations…"><button class="primary" id="saveRun">Enregistrer cette course</button></div>`;
@@ -42,7 +55,19 @@ function buildFreeRunRows(){let n=Math.max(0,Math.min(30,+$("#freeRunCount").val
 function buildFreeClimbRows(){let n=Math.max(0,Math.min(100,+$("#freeClimbCount").value||0));$("#freeClimbRows").innerHTML=Array.from({length:n},(_,i)=>`<div class="lineitem"><label>Voie ${i+1}</label><select class="free-grade">${grades.map(g=>`<option>${g}</option>`).join("")}</select></div>`).join("")}
 function renderProgress(){return `<h1>Progrès</h1><div class="card"><label>Semaine du programme (1 à 12)</label><div class="row"><input id="week" type="number" min="1" max="12" value="${data.week||1}"><button id="saveWeek">Mettre à jour</button></div><p class="subtle">Les séances de force progressent doucement au fil des semaines. Prévois une semaine plus légère toutes les quatre semaines.</p></div><h2>Historique</h2>${data.logs.length?data.logs.slice().reverse().map(l=>`<div class="card"><b>${esc(l.type)}</b><p class="muted">${esc(l.date)} · ${l.duration||"—"} min ${l.distance?`· ${l.distance} km`:""}</p><p>${esc(l.notes||"")}</p>${l.details?`<details><summary>Détails</summary><pre>${esc(JSON.stringify(l.details,null,2))}</pre></details>`:""}</div>`).join(""):`<p class="muted">Tes séances enregistrées apparaîtront ici.</p>`}<button class="primary" id="export">Exporter mes données (JSON)</button>`}
 function renderProfile(){return `<h1>Profil</h1><div class="card"><p>Les données sont conservées localement dans ce navigateur.</p><button class="primary" id="export">Exporter mes données (JSON)</button><label>Importer une sauvegarde JSON</label><input id="importFile" type="file" accept="application/json"><p class="subtle">Pense à exporter régulièrement tes données pour éviter toute perte.</p></div>`}
-function render(){let app=$("#app");app.innerHTML=page==="home"?renderHome():page==="program"?`<h1>Programme</h1><p class="muted">Semaine ${data.week||1} sur 12 · grimpe le mardi, repos le dimanche.</p>${activities.map((a,i)=>`<button class="session" data-session="${i}"><span><b>${a.day} · ${a.name}</b><small>${a.desc}</small></span><span class="tag">DÉTAILS</span></button>`).join("")}`:page==="progress"?renderProgress():page==="profile"?renderProfile():page==="log"?renderLog():detail(selected);document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));}
+function renderGuide(){return `<h1>Guide d’utilisation</h1>
+<p class="muted">Les repères essentiels pour utiliser L’ENTRAÎNEUR au quotidien.</p>
+<div class="card"><h2>1. Profils</h2><p>Dans l’onglet Profil, crée un profil par personne qui utilise cet appareil, puis sélectionne le profil actif. Les historiques et réglages sont séparés localement.</p></div>
+<div class="card"><h2>2. Suivre une séance prévue</h2><p>Ouvre Programme, choisis le jour puis ajuste les séries et répétitions si nécessaire. Enregistre la séance à la fin pour la retrouver dans Progrès.</p></div>
+<div class="card"><h2>3. Enregistrer une séance libre</h2><p>Depuis Accueil, utilise « Enregistrer une séance libre ». Choisis le type d’activité, complète durée, distance, rounds, voies ou exercices, puis enregistre.</p></div>
+<div class="card"><h2>4. Planifier les 12 semaines</h2><p>Dans Progrès, règle la semaine du cycle. Repère général : semaines 1–3 construction, semaine 4 allégée, semaines 5–7 développement, semaine 8 allégée, semaines 9–11 intensification, semaine 12 bilan. Adapte la charge à la récupération.</p></div>
+<div class="card"><h2>5. Personnaliser</h2><p>Dans Profil, ajoute des exercices ou séances à ta bibliothèque. Tu peux modifier les séances prévues et conserver tes réglages.</p></div>
+<div class="card"><h2>6. Sauvegarder et restaurer</h2><p>Dans Profil, exporte régulièrement une sauvegarde complète JSON. Pour restaurer, importe ce fichier sur le même appareil ou un autre navigateur. Garde plusieurs copies de sauvegarde.</p></div>
+<div class="card"><h2>7. Partager un programme</h2><p>Exporte le programme seul, puis envoie le fichier JSON par e-mail ou messagerie. Le destinataire l’importe depuis son propre onglet Profil. L’historique et les données personnelles ne sont pas inclus.</p></div>
+<div class="card"><h2>8. Pourquoi les appareils ne se synchronisent pas</h2><p>Les données sont stockées dans le navigateur de chaque appareil. Le téléphone et l’ordinateur ont donc des données distinctes : utilise l’export/import JSON pour les transférer. Il n’y a pas de synchronisation cloud automatique.</p></div>
+<div class="card"><h2>9. Mise à jour de l’application</h2><p>Après publication sur GitHub Pages, ferme puis rouvre l’application ou recharge Safari. N’efface pas les données de sites de Safari : cela pourrait supprimer l’historique local. Fais une sauvegarde avant une mise à jour importante.</p></div>
+<div class="card"><h2>10. Charge et récupération</h2><p>Le vélo domicile-travail compte dans la charge d’entraînement. Remplace ou allège une séance cardio/jambes si nécessaire. Une séance manquée ne se rattrape pas obligatoirement : la régularité et la récupération priment.</p></div>`}
+function render(){let app=$("#app");app.innerHTML=page==="guide"?renderGuide():page==="home"?renderHome():page==="program"?`<h1>Programme</h1><p class="muted">Semaine ${data.week||1} sur 12 · grimpe le mardi, repos le dimanche.</p>${activities.map((a,i)=>`<button class="session" data-session="${i}"><span><b>${a.day} · ${a.name}</b><small>${a.desc}</small></span><span class="tag">DÉTAILS</span></button>`).join("")}`:page==="progress"?renderProgress():page==="profile"?renderProfile():page==="log"?renderLog():detail(selected);document.querySelectorAll("nav button").forEach(b=>b.classList.toggle("active",b.dataset.page===page));}
 function addLog(log){data.logs.push({...log,date:new Date().toLocaleDateString("fr-FR")});save();page="progress";render()}
 function exportData(){let blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"}),a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download="lentraineur-sauvegarde.json";a.click();URL.revokeObjectURL(a.href)}
 document.addEventListener("click",e=>{let b=e.target.closest("button");if(!b)return;if(b.dataset.page){page=b.dataset.page;render();if(page==="log")buildFreeDetail()}if(b.dataset.session!==undefined){selected=+b.dataset.session;page="detail";render();if(activities[selected].name==="Escalade"){buildClimbs();$("#climbCount").addEventListener("input",buildClimbs)}if(activities[selected].name==="Course"){$("#runCount").addEventListener("input",buildRunSeries);buildRunSeries()}}
@@ -58,3 +83,51 @@ document.addEventListener("change",e=>{if(e.target.id==="freeType")buildFreeDeta
 $("#nav").addEventListener("click",e=>{let b=e.target.closest("button[data-page]");if(b){page=b.dataset.page;render()}});
 if("serviceWorker"in navigator)window.addEventListener("load",()=>navigator.serviceWorker.register("./sw.js").catch(()=>{}));
 render();
+// Version 7 — partage de programmes, bibliothèque, guide et mode guidé.
+function downloadJSON(obj, filename){
+ const blob=new Blob([JSON.stringify(obj,null,2)],{type:"application/json"});
+ const url=URL.createObjectURL(blob); const a=document.createElement("a");
+ a.href=url; a.download=filename; a.click(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+function readJSONFile(file, callback){
+ const reader=new FileReader(); reader.onload=()=>{try{callback(JSON.parse(reader.result))}catch(e){alert("Fichier JSON invalide.")}};
+ reader.readAsText(file);
+}
+let guideTimer=null, guideRemaining=0;
+function startGuidedTimer(seconds){
+ clearInterval(guideTimer); guideRemaining=Math.max(1,Number(seconds)||60);
+ const old=document.getElementById("guidedTimer"); if(old)old.remove();
+ const panel=document.createElement("div"); panel.id="guidedTimer"; panel.className="card timer-panel";
+ panel.innerHTML='<b>Minuteur de série</b><div id="timerValue" class="stat">'+guideRemaining+' s</div><button id="timerStop">Arrêter</button>';
+ document.querySelector("#app").prepend(panel);
+ guideTimer=setInterval(()=>{guideRemaining--;const v=document.getElementById("timerValue");if(v)v.textContent=guideRemaining+" s";if(guideRemaining<=0){clearInterval(guideTimer);if(navigator.vibrate)navigator.vibrate([250,120,250]);if(v)v.textContent="Terminé !"}},1000);
+}
+document.addEventListener("click",e=>{
+ const b=e.target.closest("button"); if(!b)return;
+ if(b.id==="createProfile"){
+  const name=($("#newProfile")?.value||"").trim();
+  if(!name)return alert("Choisis un nom de profil.");
+  if(profiles[name])return alert("Ce profil existe déjà sur cet appareil.");
+  profiles[name]={logs:[],adjustments:{},week:1,customLibrary:[]};activeProfile=name;data=profiles[name];save();render();
+ }
+ if(b.id==="addCustom"){
+  const name=($("#customName")?.value||"").trim();if(!name)return alert("Indique un nom.");
+  data.customLibrary=data.customLibrary||[];data.customLibrary.push({name,type:$("#customType").value,description:$("#customDesc").value});
+  save();render();alert("Ajouté à la bibliothèque.");
+ }
+ if(b.dataset.deleteCustom!==undefined){data.customLibrary.splice(+b.dataset.deleteCustom,1);save();render()}
+ if(b.id==="exportProgram"){
+  downloadJSON({format:"lentraineur-program-v1",activities,customLibrary:data.customLibrary||[],cycle:{weeks:12,structure:["1–3 construction","4 allégée","5–7 développement","8 allégée","9–11 intensification","12 bilan"]}},"lentraineur-programme.json");
+ }
+ if(b.id==="timerStop"){clearInterval(guideTimer);document.getElementById("guidedTimer")?.remove()}
+});
+document.addEventListener("change",e=>{
+ if(e.target.id==="profileSelect"){save();activeProfile=e.target.value;data=profiles[activeProfile]||{logs:[],adjustments:{},week:1,customLibrary:[]};save();render()}
+ if(e.target.id==="programFile"&&e.target.files[0]){
+  readJSONFile(e.target.files[0],obj=>{if(obj.format!=="lentraineur-program-v1")return alert("Ce fichier n’est pas un programme L’ENTRAÎNEUR.");
+   data.customLibrary=data.customLibrary||[];data.customLibrary.push(...(obj.customLibrary||[]).map(x=>({...x,imported:true})));
+   data.sharedPrograms=data.sharedPrograms||[];data.sharedPrograms.push({importedAt:new Date().toISOString(),activities:obj.activities||[],cycle:obj.cycle||{}});
+   save();render();alert("Programme importé. Il est conservé dans tes programmes personnalisés.");
+  });
+ }
+});
