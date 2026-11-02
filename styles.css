@@ -8,3 +8,11 @@ textarea{width:100%;background:#0d120f;color:var(--text);border:1px solid #46534
 .timer-panel .stat{font-size:42px;color:var(--lime);margin:10px}
 nav{overflow-x:auto;gap:2px}
 nav button{white-space:nowrap;font-size:12px;padding-inline:7px}
+
+textarea{width:100%;background:#0d120f;color:var(--text);border:1px solid #46534a;border-radius:12px;padding:12px;font:inherit;resize:vertical}
+.exercise{grid-template-columns:1fr 1fr 1fr;align-items:end}
+.exercise b{grid-column:1/-1;color:var(--lime)}
+.exercise label{margin:3px 0}
+.secondary{width:100%;margin-top:10px}
+.card .subtle{line-height:1.5}
+#runnerTimer{font-size:22px;font-weight:800}
