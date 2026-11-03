@@ -16,3 +16,9 @@ textarea{width:100%;background:#0d120f;color:var(--text);border:1px solid #46534
 .secondary{width:100%;margin-top:10px}
 .card .subtle{line-height:1.5}
 #runnerTimer{font-size:22px;font-weight:800}
+
+.home-day{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:13px;margin:10px 0}
+.home-day-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.done-mark{color:#6ee78a;font-weight:800}.pending-mark{color:var(--muted);font-size:13px}
+.home-day .buttonrow{margin-top:9px}.home-day .buttonrow button{font-size:13px;padding:10px 8px}
+.home-day .buttonrow .primary{margin-top:0;width:auto;flex:1}

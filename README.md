@@ -25,3 +25,13 @@ Le cache PWA est passé à `lentraineur-v8` pour forcer le chargement des nouvea
 
 ## Limites de validation
 Le JavaScript a été contrôlé syntaxiquement. Il reste indispensable de tester le parcours sur iPhone après déploiement, notamment les minuteries en arrière-plan (iOS peut suspendre une page inactive) et les autorisations de notification.
+
+## Version 8
+- Accueil interactif : choix d’une séance par jour parmi les séances de base et personnalisées.
+- Description de la séance visible dans la liste ; accès à la fiche pour consulter/modifier.
+- Validation verte des séances réalisées et remise à zéro du statut à chaque nouvelle semaine, sans suppression de l’historique.
+- Réglages des rounds de boxe : nombre, durée et pause.
+- Historique ancien format `planned-*` rendu plus lisible lorsque les identifiants correspondent au programme de base.
+- Guide d’utilisation actualisé.
+
+La sélection manuelle sur l’accueil est une adaptation de la semaine en cours ; la programmation hebdomadaire/cycle reste accessible dans les rubriques existantes. Les données sont toujours conservées dans le stockage local `entraineur-v4`.
